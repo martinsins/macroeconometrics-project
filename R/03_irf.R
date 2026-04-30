@@ -11,9 +11,6 @@
 # Confidence intervals via delta method (numerical Jacobian).
 # =============================================================================
 
-library(forecast)
-library(ggplot2)
-library(patchwork)
 
 SHOCK_SIZE <- 100   # +100k troops
 

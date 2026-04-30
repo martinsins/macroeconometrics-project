@@ -3,31 +3,27 @@
 # Military Deployment & Public Debt — ARMA-X Estimation
 # =============================================================================
 #
-# Main spec: Delta_debt_t = mu + AR(p) + MA(q) + beta*troops_t
-#                         + gamma1*d2009_t + gamma2*d2020_t + eps_t
+# Main spec: Delta_debt_dt_t = mu + AR(p) + MA(q) + beta*troops_dt_t
+#                            + gamma1*d2009_t + gamma2*d2020_t + eps_t
 #
-# Troops are kept in levels despite the ambiguity in stationarity due to a
-# secular downward trend (post-Cold War demobilisation). We prefer levels for
-# direct interpretability of beta. Robustness: re-estimate with mean-centred
-# (detrended) troops to verify coefficient stability.
+# Uses detrended series from 01b_stationarity.R (us_ts_detrended.csv):
+#   d_debt_gdp_dt : Δdebt/GDP, detrended if 01b found trend-stationarity
+#   troops_dt     : troops deployed, detrended if 01b found trend-stationarity
 #
 # Crisis dummies absorb the GFC (2009) and COVID (2020) fiscal shocks.
 # =============================================================================
 
-library(forecast)
-library(dplyr)
-library(ggplot2)
-library(patchwork)
 
 # ── 0. Load data ──────────────────────────────────────────────────────────────
-df <- read.csv("data/processed/us_ts_data.csv")
-df_clean <- df |> filter(!is.na(d_debt_gdp))
+# us_ts_detrended.csv is produced by 01b_stationarity.R; already filtered
+# (no NA rows) and contains _dt columns (detrended series where applicable).
+df_clean <- read.csv("data/processed/us_ts_detrended.csv")
 
-y <- ts(df_clean$d_debt_gdp, start = 1951, frequency = 1)
+y <- ts(df_clean$d_debt_gdp_dt, start = 1951, frequency = 1)
 
 # ── 1. Build xreg matrix ──────────────────────────────────────────────────────
 xreg <- cbind(
-  troops = df_clean$troops,
+  troops = df_clean$troops_dt,
   d2009  = as.integer(df_clean$year == 2009),
   d2020  = as.integer(df_clean$year == 2020)
 )

@@ -72,12 +72,14 @@ $\beta$ captures the contemporaneous effect of deployment intensity on the chang
 ## Requirements
 
 - R ≥ 4.2
-- Key packages: `forecast`, `tseries`, `ggplot2`, `dplyr`, `readxl`, `tidyr`, `patchwork`
+- Key packages: `forecast`, `tseries`, `urca`, `ggplot2`, `dplyr`, `readxl`, `tidyr`, `patchwork`
 
 ```r
-install.packages(c("forecast", "tseries", "ggplot2",
+install.packages(c("forecast", "tseries", "urca", "ggplot2",
                    "dplyr", "readxl", "tidyr", "patchwork"))
 ```
+
+All `library()` calls are centralised in `00_data_prep.R`. Run the scripts **in order in the same R session** (e.g. via `source()` in RStudio) so that packages loaded by `00` remain available to subsequent scripts.
 
 ## Authors
 

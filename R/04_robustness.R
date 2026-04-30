@@ -7,64 +7,70 @@
 # it under alternative specifications to assess coefficient stability.
 # =============================================================================
 
-library(forecast)
-library(dplyr)
+sep  <- strrep("=", 64)
+sep2 <- strrep("-", 64)
 
 # ── 0. Load main model ────────────────────────────────────────────────────────
-saved   <- readRDS("output/armax_fit.rds")
-fit     <- saved$fit
-p_sel   <- saved$p
-q_sel   <- saved$q
+saved    <- readRDS("output/armax_fit.rds")
+fit      <- saved$fit
+p_sel    <- saved$p
+q_sel    <- saved$q
 df_clean <- saved$df
 
-y <- ts(df_clean$d_debt_gdp, start = 1951, frequency = 1)
+y <- ts(df_clean$d_debt_gdp_dt, start = 1951, frequency = 1)
 
-cat(sprintf("Loaded ARMA(%d,%d)-X from output/armax_fit.rds\n", p_sel, q_sel))
+cat(sprintf("\n%s\n  Loaded ARMA(%d,%d)-X  |  n = %d  (%d-%d)\n%s\n",
+            sep, p_sel, q_sel, nrow(df_clean),
+            min(df_clean$year), max(df_clean$year), sep))
 
-# ── 1. Detrended troops ───────────────────────────────────────────────────────
-rtrend    <- time(y) - mean(time(y))
-troops_dt <- residuals(lm(df_clean$troops ~ as.numeric(rtrend)))
+# ── Helper: extract one-row summary for a coefficient ────────────────────────
+coef_row <- function(fit, var = "troops") {
+  b  <- coef(fit)[var]
+  v  <- vcov(fit)[var, var]
+  se <- if (is.na(v) || v < 0) NA_real_ else sqrt(v)
+  t  <- if (is.na(se)) NA_real_ else b / se
+  p  <- if (is.na(t))  NA_real_ else 2 * pnorm(-abs(t))
+  data.frame(
+    estimate = round(b,  5),
+    std_err  = round(se, 5),
+    t_stat   = round(t,  3),
+    p_value  = round(p,  4),
+    signif   = ifelse(is.na(p), "   ",
+               ifelse(p < 0.01, "***",
+               ifelse(p < 0.05, "** ",
+               ifelse(p < 0.10, "*  ", "   "))))
+  )
+}
 
-cat(sprintf("\n[Check 1] Troops detrending: R2 = %.3f\n",
-            summary(lm(df_clean$troops ~ as.numeric(rtrend)))$r.squared))
+# ── Helper: full coefficient table ───────────────────────────────────────────
+full_coef_table <- function(fit) {
+  cf <- coef(fit)
+  se <- sqrt(diag(vcov(fit)))
+  t  <- cf / se
+  p  <- 2 * pnorm(-abs(t))
+  data.frame(
+    estimate = round(cf, 5),
+    std_err  = round(se, 5),
+    t_stat   = round(t,  3),
+    p_value  = round(p,  4),
+    signif   = ifelse(p < 0.01, "***",
+               ifelse(p < 0.05, "** ",
+               ifelse(p < 0.10, "*  ", "   ")))
+  )
+}
 
-xreg_rob <- cbind(
-  troops_dt = troops_dt,
-  d2009     = as.integer(df_clean$year == 2009),
-  d2020     = as.integer(df_clean$year == 2020)
-)
+# =============================================================================
+# CHECK 1 — Lag sensitivity: troops_{t-k} for k = 0, 1, 2
+# =============================================================================
 
-fit_rob <- Arima(y, order = c(p_sel, 0, q_sel), xreg = xreg_rob, include.mean = TRUE)
-
-coef_rob <- coef(fit_rob)
-se_rob   <- sqrt(diag(vcov(fit_rob)))
-t_rob    <- coef_rob / se_rob
-p_rob    <- 2 * pnorm(-abs(t_rob))
-
-rob_table <- data.frame(
-  estimate = round(coef_rob, 5),
-  std_err  = round(se_rob,   5),
-  t_stat   = round(t_rob,    3),
-  p_value  = round(p_rob,    4)
-)
-
-cat("\n=== [Check 1] Coefficient Table — Detrended Troops ===\n")
-print(rob_table)
-
-cat(sprintf("\n  Main spec   — beta(troops)    = %.5f  (SE = %.5f)\n",
-            coef(fit)["troops"],        sqrt(vcov(fit)["troops",       "troops"])))
-cat(sprintf("  Robustness  — beta(troops_dt) = %.5f  (SE = %.5f)\n",
-            coef(fit_rob)["troops_dt"], sqrt(vcov(fit_rob)["troops_dt", "troops_dt"])))
-
-# ── 2. Lagged troops (x_{t-1}, x_{t-2}) ─────────────────────────────────────
 fit_lag <- function(k) {
-  df_k      <- df_clean[(k + 1):nrow(df_clean), ]
-  troops_k  <- df_clean$troops[1:(nrow(df_clean) - k)]
-  y_k       <- ts(df_k$d_debt_gdp, start = min(df_k$year), frequency = 1)
-  xreg_k    <- cbind(
-    troops  = troops_k,
-    d2009   = as.integer(df_k$year == 2009),
-    d2020   = as.integer(df_k$year == 2020)
+  df_k     <- df_clean[(k + 1):nrow(df_clean), ]
+  troops_k <- df_clean$troops_dt[1:(nrow(df_clean) - k)]
+  y_k      <- ts(df_k$d_debt_gdp_dt, start = min(df_k$year), frequency = 1)
+  xreg_k   <- cbind(
+    troops = troops_k,
+    d2009  = as.integer(df_k$year == 2009),
+    d2020  = as.integer(df_k$year == 2020)
   )
   Arima(y_k, order = c(p_sel, 0, q_sel), xreg = xreg_k, include.mean = TRUE)
 }
@@ -72,24 +78,24 @@ fit_lag <- function(k) {
 fit_l1 <- fit_lag(1)
 fit_l2 <- fit_lag(2)
 
-coef_summary <- function(fit, var = "troops") {
-  b       <- coef(fit)[var]
-  v       <- vcov(fit)[var, var]
-  se      <- if (is.na(v) || v < 0) NA_real_ else sqrt(v)  # non-PD Hessian → NA
-  t       <- if (is.na(se)) NA_real_ else b / se
-  p       <- if (is.na(t))  NA_real_ else 2 * pnorm(-abs(t))
-  data.frame(estimate = round(b, 5), std_err = round(se, 5),
-             t_stat = round(t, 3), p_value = round(p, 4))
-}
+lag_table <- rbind(
+  cbind(spec = "Lag 0 — troops_t   (baseline)", coef_row(fit,    "troops")),
+  cbind(spec = "Lag 1 — troops_{t-1}          ", coef_row(fit_l1, "troops")),
+  cbind(spec = "Lag 2 — troops_{t-2}          ", coef_row(fit_l2, "troops"))
+)
 
-cat("\n=== [Check 2] Lag Sensitivity — troops_{t-k} ===\n")
-cat("\n  Lag 0 (main spec):\n");  print(coef_summary(fit,    "troops"))
-cat("\n  Lag 1:\n");              print(coef_summary(fit_l1, "troops"))
-cat("  (NA SE = non-PD Hessian at MLE; parameter near-unidentified)\n")
-cat("\n  Lag 2:\n");              print(coef_summary(fit_l2, "troops"))
+cat(sprintf("\n%s\n  CHECK 1 — Lag Sensitivity  |  beta(troops_{t-k})\n%s\n\n",
+            sep, sep))
+print(lag_table, row.names = FALSE)
 
-# ── 3. Defense expenditure as alternative X (FRED: FDEFX) ────────────────────
-cat("\n[Check 3] Downloading FDEFX from FRED...\n")
+# =============================================================================
+# CHECK 2 — Alternative X: defense expenditure (FRED: FDEFX)
+# =============================================================================
+
+cat(sprintf("\n%s\n  CHECK 2 — Alternative X: Defense Expenditure (FDEFX)\n%s\n",
+            sep, sep))
+cat("  Downloading FDEFX from FRED...\n")
+
 tmp <- tempfile(fileext = ".csv")
 download.file("https://fred.stlouisfed.org/graph/fredgraph.csv?id=FDEFX",
               tmp, quiet = TRUE)
@@ -105,34 +111,27 @@ fdefx_annual <- fdefx_raw |>
   group_by(year) |>
   summarise(fdefx = mean(fdefx), .groups = "drop")
 
-df_def <- inner_join(df_clean, fdefx_annual, by = "year")
-y_def  <- ts(df_def$d_debt_gdp, start = min(df_def$year), frequency = 1)
-
+df_def   <- inner_join(df_clean, fdefx_annual, by = "year")
+y_def    <- ts(df_def$d_debt_gdp_dt, start = min(df_def$year), frequency = 1)
 xreg_def <- cbind(
   fdefx = df_def$fdefx,
   d2009 = as.integer(df_def$year == 2009),
   d2020 = as.integer(df_def$year == 2020)
 )
+fit_def <- Arima(y_def, order = c(p_sel, 0, q_sel),
+                 xreg = xreg_def, include.mean = TRUE)
 
-fit_def  <- Arima(y_def, order = c(p_sel, 0, q_sel), xreg = xreg_def, include.mean = TRUE)
-cf_def   <- coef(fit_def)
-se_def   <- sqrt(diag(vcov(fit_def)))
+cat(sprintf("  Sample: %d-%d  (n=%d)\n\n", min(df_def$year), max(df_def$year), nrow(df_def)))
+print(full_coef_table(fit_def))
 
-cat(sprintf("  Sample: %d-%d  (n=%d)\n", min(df_def$year), max(df_def$year), nrow(df_def)))
-cat("\n=== [Check 3] Coefficient Table — Defense Expenditure (bn USD SAAR) ===\n")
-print(data.frame(
-  estimate = round(cf_def,                    6),
-  std_err  = round(se_def,                    6),
-  t_stat   = round(cf_def / se_def,           3),
-  p_value  = round(2 * pnorm(-abs(cf_def / se_def)), 4)
-))
+# =============================================================================
+# CHECK 3 — Sub-period analysis: Cold War vs. Post-9/11
+# =============================================================================
 
-# ── 4. Sub-period analysis: Cold War vs. Post-9/11 ───────────────────────────
 run_subperiod <- function(label, year_min, year_max) {
   df_sub <- df_clean |> filter(year >= year_min, year <= year_max)
-  cat(sprintf("\n  [%s]  n = %d (%d-%d)\n", label, nrow(df_sub), year_min, year_max))
 
-  y_sub <- ts(df_sub$d_debt_gdp, start = year_min, frequency = 1)
+  y_sub <- ts(df_sub$d_debt_gdp_dt, start = year_min, frequency = 1)
 
   crisis_cols <- lapply(c(2009, 2020), function(cy) {
     if (cy >= year_min && cy <= year_max) as.integer(df_sub$year == cy) else NULL
@@ -140,22 +139,59 @@ run_subperiod <- function(label, year_min, year_max) {
   crisis_mat <- do.call(cbind, Filter(Negate(is.null), crisis_cols))
 
   xreg_sub <- if (is.null(crisis_mat)) {
-    cbind(troops = df_sub$troops)
+    cbind(troops = df_sub$troops_dt)
   } else {
-    cbind(troops = df_sub$troops, crisis_mat)
+    cbind(troops = df_sub$troops_dt, crisis_mat)
   }
 
   fit_sub <- tryCatch(
     Arima(y_sub, order = c(p_sel, 0, q_sel), xreg = xreg_sub, include.mean = TRUE),
-    error = function(e) { cat("    Model failed to converge\n"); NULL }
+    error = function(e) NULL
   )
-  if (!is.null(fit_sub)) print(coef_summary(fit_sub, "troops"))
-  invisible(fit_sub)
+
+  if (is.null(fit_sub)) {
+    return(cbind(
+      spec = label,
+      data.frame(n = nrow(df_sub), estimate = NA, std_err = NA,
+                 t_stat = NA, p_value = NA, signif = "   ")
+    ))
+  }
+  cbind(spec   = sprintf("%-30s (n=%d)", label, nrow(df_sub)),
+        coef_row(fit_sub, "troops"))
 }
 
-cat("\n=== [Check 4] Sub-period Analysis — beta(troops) ===\n")
-cat("\n  Full sample:"); print(coef_summary(fit, "troops"))
-run_subperiod("Cold War   1951-1990", 1951, 1990)
-run_subperiod("Post-9/11  2001-end",  2001, max(df_clean$year))
+sub_table <- rbind(
+  cbind(spec = sprintf("%-30s (n=%d)", "Full sample 1951-end",
+                       nrow(df_clean)), coef_row(fit, "troops")),
+  run_subperiod("Cold War   1951-1990", 1951, 1990),
+  run_subperiod("Post-9/11  2001-end",  2001, max(df_clean$year))
+)
 
-cat("\n✓ 04_robustness.R complete.\n")
+cat(sprintf("\n%s\n  CHECK 3 — Sub-period Analysis  |  beta(troops)\n%s\n\n",
+            sep, sep))
+print(sub_table, row.names = FALSE)
+
+# =============================================================================
+# FINAL SUMMARY — beta(X) across all specifications
+# =============================================================================
+
+summary_table <- rbind(
+  cbind(spec = sprintf("Main spec   ARMA(%d,%d)-X  troops_dt lag0", p_sel, q_sel),
+        coef_row(fit,    "troops")),
+  cbind(spec = sprintf("Lag 1       ARMA(%d,%d)-X  troops_dt lag1", p_sel, q_sel),
+        coef_row(fit_l1, "troops")),
+  cbind(spec = sprintf("Lag 2       ARMA(%d,%d)-X  troops_dt lag2", p_sel, q_sel),
+        coef_row(fit_l2, "troops")),
+  cbind(spec = sprintf("Alt. X      ARMA(%d,%d)-X  FDEFX          ", p_sel, q_sel),
+        coef_row(fit_def, "fdefx")),
+  cbind(spec = "Sub-period  Cold War 1951-1990            ",
+        run_subperiod("Cold War   1951-1990", 1951, 1990)[, -1]),
+  cbind(spec = "Sub-period  Post-9/11 2001-end            ",
+        run_subperiod("Post-9/11  2001-end", 2001, max(df_clean$year))[, -1])
+)
+
+cat(sprintf("\n%s\n  SUMMARY — beta(X) across all specifications\n%s\n\n", sep, sep))
+print(summary_table, row.names = FALSE)
+cat("\n  Signif. codes: *** p<0.01  ** p<0.05  * p<0.10\n")
+
+cat(sprintf("\n✓ 04_robustness.R complete.\n"))

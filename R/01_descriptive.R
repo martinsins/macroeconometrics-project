@@ -3,11 +3,6 @@
 # Military Deployment & Public Debt — Descriptive Analysis
 # ============================================================
 
-library(ggplot2)
-library(dplyr)
-library(tidyr)
-library(patchwork)
-library(tseries)   # adf.test, kpss.test
 
 # ── 0. Load data ────────────────────────────────────────────
 df <- read.csv("data/processed/us_ts_data.csv")
@@ -16,9 +11,8 @@ df <- read.csv("data/processed/us_ts_data.csv")
 df_clean <- df |> filter(!is.na(d_debt_gdp))
 
 # Convert to ts objects (annual, start 1951)
-y  <- ts(df_clean$d_debt_gdp, start = 1951, frequency = 1)
-x  <- ts(df_clean$troops,     start = 1951, frequency = 1)
-dg <- ts(df$debt_gdp,         start = 1950, frequency = 1)
+y <- ts(df_clean$d_debt_gdp, start = 1951, frequency = 1)
+x <- ts(df_clean$troops,     start = 1951, frequency = 1)
 
 # ── 1. Time-series plots ─────────────────────────────────────
 
@@ -116,30 +110,7 @@ ggsave("output/figures/01_acf_pacf.pdf", combo_acf,
        width = 9, height = 8)
 
 
-# ── 4. Unit-root tests ───────────────────────────────────────
-
-cat("\n=== Unit-Root & Stationarity Tests ===\n\n")
-
-run_tests <- function(series, label) {
-  cat("--- Variable:", label, "---\n")
-  
-  # ADF (H0: unit root)
-  adf <- adf.test(series, alternative = "stationary")
-  cat(sprintf("  ADF test:   stat = %.3f,  p-value = %.4f  [H0: unit root]\n",
-              adf$statistic, adf$p.value))
-  
-  # KPSS (H0: stationary)
-  kpss <- kpss.test(series, null = "Level")
-  cat(sprintf("  KPSS test:  stat = %.3f,  p-value = %.4f  [H0: stationary]\n\n",
-              kpss$statistic, kpss$p.value))
-}
-
-run_tests(dg, "Debt/GDP (level)")
-run_tests(y,  "Δ Debt/GDP (first diff)")
-run_tests(x,  "Troops deployed")
-
-
-# ── 5. Scatter: Δ debt vs troops ─────────────────────────────
+# ── 4. Scatter: Δ debt vs troops ─────────────────────────────
 p_scatter <- ggplot(df_clean, aes(x = troops, y = d_debt_gdp,
                                   label = year)) +
   geom_point(colour = "#762a83", alpha = 0.7) +
@@ -155,3 +126,5 @@ print(p_scatter)
 ggsave("output/figures/01_scatter.pdf", p_scatter, width = 7, height = 5)
 
 cat("\n✓ 01_descriptive.R complete. Figures saved to output/figures/\n")
+cat("  -> Run 01b_stationarity.R for formal unit-root tests and detrending.\n")
+
