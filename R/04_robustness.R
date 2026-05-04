@@ -194,4 +194,41 @@ cat(sprintf("\n%s\n  SUMMARY — beta(X) across all specifications\n%s\n\n", sep
 print(summary_table, row.names = FALSE)
 cat("\n  Signif. codes: *** p<0.01  ** p<0.05  * p<0.10\n")
 
+# ── Save outputs ──────────────────────────────────────────────────────────────
+dir.create("output/figures", recursive = TRUE, showWarnings = FALSE)
+dir.create("output/tables",  recursive = TRUE, showWarnings = FALSE)
+
+# Table: CSV
+write.csv(summary_table, "output/tables/T6_robustness.csv", row.names = FALSE)
+
+# Coefficient plot across all specifications
+rob_plot_df <- data.frame(
+  spec     = summary_table$spec,
+  estimate = as.numeric(summary_table$estimate),
+  se       = as.numeric(summary_table$std_err)
+) |>
+  dplyr::mutate(
+    lo95 = estimate - 1.96 * se,
+    hi95 = estimate + 1.96 * se,
+    spec = factor(spec, levels = rev(spec))
+  )
+
+p_rob <- ggplot(rob_plot_df, aes(x = estimate, y = spec)) +
+  geom_vline(xintercept = 0, linetype = "dashed", colour = "grey50") +
+  geom_errorbarh(aes(xmin = lo95, xmax = hi95), height = 0.2,
+                 colour = "#2166ac", linewidth = 0.7) +
+  geom_point(size = 3, colour = "#2166ac") +
+  labs(
+    title    = "Robustness: beta(X) across specifications",
+    subtitle = "Point estimate + 95% CI  |  dependent variable: Delta Debt/GDP",
+    x        = "Coefficient estimate",
+    y        = NULL
+  ) +
+  theme_minimal(base_size = 11)
+
+print(p_rob)
+ggsave("output/figures/04_robustness.pdf", p_rob, width = 9, height = 5)
+cat("Saved: output/tables/T6_robustness.csv\n")
+cat("Saved: output/figures/04_robustness.pdf\n")
+
 cat(sprintf("\n✓ 04_robustness.R complete.\n"))

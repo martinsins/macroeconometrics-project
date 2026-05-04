@@ -1,0 +1,16 @@
+\begin{table}[htbp]
+  \centering
+  \caption{Stationarity Tests: ADF and KPSS}
+  \label{tab:stationarity}
+  \begin{tabular}{lccccl}
+    \toprule
+    Variable & ADF-drift $\tau_2$ [CV5\%] & KPSS Level & ADF-trend $\tau_3$ [CV5\%] & KPSS Trend & Conclusion \\
+    \midrule
+    $\Delta$ Debt/GDP (raw) & -2.484 [-2.890] & 1.110** & -3.937 [-3.450] & 0.067 & Trend-stationary $\Rightarrow$ detrend \\
+    $\Delta$ Debt/GDP (detrended) & -4.056 [-2.890] & 0.067 & -3.937 [-3.450] & 0.067 & Stationary around constant \\
+    Troops (raw) & -2.318 [-2.890] & 1.265** & -3.787 [-3.450] & 0.111 & Trend-stationary $\Rightarrow$ detrend \\
+    Troops (detrended) & -3.817 [-2.890] & 0.111 & -3.787 [-3.450] & 0.111 & Stationary around constant \\
+    \bottomrule
+  \end{tabular}
+  \\[2pt] \footnotesize{ADF: Augmented Dickey--Fuller test. $H_0$: unit root. Lag order selected by AIC. Brackets show 5\% critical value; reject $H_0$ if $\tau < $ CV. KPSS: Kwiatkowski--Phillips--Schmidt--Shin test. $H_0$: stationarity. Asterisks denote rejection of $H_0$: * $p<0.10$, ** $p<0.05$, *** $p<0.01$. A series is classified as trend-stationary if ADF-trend rejects the unit root and KPSS-trend does not reject stationarity.}
+\end{table}

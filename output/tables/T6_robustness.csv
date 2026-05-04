@@ -1,0 +1,7 @@
+"spec","estimate","std_err","t_stat","p_value","signif"
+"Main spec   ARMA(1,0)-X  troops_dt lag0",2e-05,0.00013,0.148,0.8822,"   "
+"Lag 1       ARMA(1,0)-X  troops_dt lag1",4e-05,0.00015,0.3,0.7645,"   "
+"Lag 2       ARMA(1,0)-X  troops_dt lag2",0,0.00014,0.03,0.9762,"   "
+"Alt. X      ARMA(1,0)-X  FDEFX          ",-1e-05,0.00016,-0.033,0.9737,"   "
+"Sub-period  Cold War 1951-1990            ",0,0.00021,-0.005,0.9964,"   "
+"Sub-period  Post-9/11 2001-end            ",0.00012,0.00027,0.447,0.6547,"   "

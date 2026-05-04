@@ -1,0 +1,23 @@
+\begin{table}[htbp]
+  \centering
+  \caption{ARMA(1,0)-X Estimation Results}
+  \label{tab:armax_results}
+  \begin{tabular}{lrrrr}
+    \toprule
+    Parameter & Estimate & Std. Error & $t$-stat & $p$-value \\
+    \midrule
+    $\phi_1$ (AR 1) & 0.57475 & 0.11604 & 4.953 & 0.0000*** \\
+    $\mu$ (intercept) & -0.00601 & 0.00645 & -0.931 & 0.3518 \\
+    $\beta$ (troops, detrended) & 0.00002 & 0.00013 & 0.148 & 0.8822 \\
+    $\gamma_{2009}$ (GFC dummy) & 0.08108 & 0.02018 & 4.017 & 0.0001*** \\
+    $\gamma_{2020}$ (COVID dummy) & 0.18644 & 0.02332 & 7.994 & 0.0000*** \\
+    \midrule
+    --- & --- & --- & --- & --- \\
+    $\sigma^2$ & 0.000564 &  &  &  \\
+    Log-likelihood & 164.861 &  &  &  \\
+    AIC / BIC & -317.72 / -304.23 &  &  &  \\
+    Observations & 70 &  &  &  \\
+    \bottomrule
+  \end{tabular}
+  \\[2pt] \footnotesize{Dependent variable: $\Delta$Debt/GDP (detrended). Exogenous regressor: troops deployed abroad (thousands, detrended). Crisis dummies absorb the 2009 GFC and 2020 COVID fiscal shocks. Estimated by maximum likelihood. Standard errors from the observed information matrix. * $p<0.10$, ** $p<0.05$, *** $p<0.01$.}
+\end{table}

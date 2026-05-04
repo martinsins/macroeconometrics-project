@@ -1,0 +1,5 @@
+"Variable","N","Mean","SD","Min","Median","Max"
+"$\Delta$ Debt/GDP (raw)",70,0.0051,0.044,-0.141,0.004,0.213
+"$\Delta$ Debt/GDP (detrended)",70,0,0.0361,-0.1036,0.0014,0.1654
+"Troops deployed (thousands, raw)",70,478.0671,231.5876,184.4,441.8985,1082.777
+"Troops deployed (thousands, detrended)",70,0,143.8386,-185.6426,-13.3383,448.6347
