@@ -168,6 +168,42 @@ print(p_ccf)
 ggsave("output/figures/05_ccf.pdf", p_ccf, width = 9, height = 5)
 cat("\nSaved: output/figures/05_ccf.pdf\n")
 
+# ── Save exogeneity table ─────────────────────────────────────────────────────
+dir.create("output/tables", recursive = TRUE, showWarnings = FALSE)
+
+t_exog <- data.frame(
+  Direction        = c("$\\Delta$Debt/GDP $\\to$ Troops",
+                       "Troops $\\to$ $\\Delta$Debt/GDP"),
+  "F-statistic"    = c(round(F1, 3), round(F2, 3)),
+  "$p$-value"      = c(round(p1, 4), round(p2, 4)),
+  "Wald $p$-value" = c(round(p_wald, 4), NA),
+  Conclusion       = c("Fail to reject $H_0$ — exogeneity supported",
+                       "Fail to reject $H_0$"),
+  check.names = FALSE
+)
+
+write.csv(t_exog, "output/tables/T0_exogeneity.csv", row.names = FALSE)
+
+# LaTeX version
+lines <- c(
+  "\\begin{table}[htbp]",
+  "  \\centering",
+  "  \\caption{Granger Causality Tests: Exogeneity of Troops Deployed}",
+  "  \\label{tab:exogeneity}",
+  "  \\begin{tabular}{lcccp{5cm}}",
+  "    \\toprule",
+  "    Direction & $F$-stat & $p$-value & Wald $p$ & Conclusion \\\\",
+  "    \\midrule",
+  sprintf("    $\\Delta$Debt/GDP $\\to$ Troops & %.3f & %.4f & %.4f & Fail to reject $H_0$ --- exogeneity supported \\\\", F1, p1, p_wald),
+  sprintf("    Troops $\\to$ $\\Delta$Debt/GDP & %.3f & %.4f & ---  & Fail to reject $H_0$ \\\\", F2, p2),
+  "    \\bottomrule",
+  "  \\end{tabular}",
+  sprintf("  \\\\[2pt] \\footnotesize{Bivariate Granger causality test with $k = %d$ lags (BIC-selected). $H_0$: the row variable does not Granger-cause the column variable. Wald $p$-value from a manual F-test of debt lags in the troops equation (Section~3, unrestricted vs.~restricted OLS). Sample: 1951--2020 ($n = 70$).}", k_use),
+  "\\end{table}"
+)
+writeLines(lines, "output/tables/T0_exogeneity.tex")
+cat("Saved: output/tables/T0_exogeneity.tex\n")
+
 # =============================================================================
 # SUMMARY
 # =============================================================================
