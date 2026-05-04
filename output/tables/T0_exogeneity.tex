@@ -1,0 +1,14 @@
+\begin{table}[htbp]
+  \centering
+  \caption{Granger Causality Tests: Exogeneity of Troops Deployed}
+  \label{tab:exogeneity}
+  \begin{tabular}{lcccp{5cm}}
+    \toprule
+    Direction & $F$-stat & $p$-value & Wald $p$ & Conclusion \\
+    \midrule
+    $\Delta$Debt/GDP $\to$ Troops & 0.283 & 0.9424 & 0.7366 & Fail to reject $H_0$ --- exogeneity supported \\
+    Troops $\to$ $\Delta$Debt/GDP & 0.574 & 0.7493 & ---  & Fail to reject $H_0$ \\
+    \bottomrule
+  \end{tabular}
+  \\[2pt] \footnotesize{Bivariate Granger causality test with $k = 6$ lags (BIC-selected). $H_0$: the row variable does not Granger-cause the column variable. Wald $p$-value from a manual F-test of debt lags in the troops equation (Section~3, unrestricted vs.~restricted OLS). Sample: 1951--2020 ($n = 70$).}
+\end{table}
