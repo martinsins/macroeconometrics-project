@@ -1,0 +1,3 @@
+"Direction","F-statistic","$p$-value","Wald $p$-value","Conclusion"
+"$\Delta$Debt/GDP $\to$ Troops",0.283,0.9424,0.7366,"Fail to reject $H_0$ — exogeneity supported"
+"Troops $\to$ $\Delta$Debt/GDP",0.574,0.7493,NA,"Fail to reject $H_0$"
