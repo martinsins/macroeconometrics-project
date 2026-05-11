@@ -152,7 +152,7 @@ p_ccf <- ggplot(ccf_df, aes(x = lag, y = ccf)) +
   annotate("text", x =  4.5, y = max(abs(ccf_df$ccf)) * 0.92,
            label = "debt leads troops\n(endogeneity concern if significant)",
            size = 2.8, colour = "#d6604d", fontface = "italic", hjust = 0.5) +
-  annotate("text", x = -4.5, y = max(abs(ccf_df$ccf)) * 0.92,
+  annotate("text", x = -4.5, y = -0.13,
            label = "troops lead debt\n(exogeneity-consistent)",
            size = 2.8, colour = "#4d9221", fontface = "italic", hjust = 0.5) +
   scale_x_continuous(breaks = -8:8) +
