@@ -26,7 +26,7 @@ library(forecast)
 
 message("Loading JST data...")
 
-# Download JST dataset if not already present
+# Download JST dataset 
 jst_path <- "data/raw/JSTdatasetR6.xlsx"
 if (!file.exists(jst_path)) {
   dir.create("data/raw", recursive = TRUE, showWarnings = FALSE)
